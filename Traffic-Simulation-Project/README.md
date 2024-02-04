@@ -26,7 +26,7 @@ First, clone the repository to your local machine:
 
 bash
 
-git clone https://github.com/MGhazi002/4201_AI/traffic-simulation-project.git
+git clone https://github.com/MGhazi002/4201_AI.git
 
 Navigate to the project directory:
 
