@@ -177,6 +177,8 @@ def main():
     while i < k:
         # Get the starting and finishing node of each path and calculate its benefit
         for (start, end), path in cachedPaths.items():
+            if simGraph.has_edge(start, end):
+                continue  # Dont consider roads that exist
             benefitsMatrix[(start, end)] = calculate_benefit(start, end, simGraph, cachedPaths, f)
 
         # Find the edge with the highest benefit
