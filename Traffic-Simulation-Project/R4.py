@@ -1,4 +1,4 @@
-# R1: Code from pseudo, Project 1 group 3
+# R4: Code from R1 adapted to R4, Project 1 group 3
 
 import networkx as nx
 import random
@@ -24,12 +24,13 @@ def prepare_graph(N, p_initial, L):
 
     # Connect nodes based on the initial p value and increment p if not fully connected
     while not nx.is_connected(simGraph):
-        simGraph.clear_edges()
+        simGraph.clear_edges() # We want to do this fresh so we dont have tons of edges
         for u in range(N):
             for v in range(u + 1, N):
                 if random.random() < p and not simGraph.has_edge(u, v):
                     simGraph.add_edge(u, v, length=random.randint(*L), traffic_volume=0)
         p += 0.01  # Increment p as defined by project
+
 
     # Return the generated graph
     return simGraph
@@ -92,7 +93,8 @@ def calculate_benefit(X, Y, G, shortestPaths, f):
     # Distance is the shortest path * shrinkage factor
     d_XY = spd_XY * f
 
-    # The trips is calculated by adding them both way together
+    # Directly calculate nt as the sum of trips (traffic_volume) between X and Y and Y to X
+    # This calculation is from the pseudo: (nt(X, Y) + nt(Y, X))
     nt_XY = 0
     if (X, Y) in shortestPaths:
         nt_XY += sum(G[path_XY[i]][path_XY[i + 1]]['traffic_volume'] for i in range(len(path_XY) - 1))
@@ -171,6 +173,9 @@ def main():
     # A dictionary of all the roads we are going to build
     roadsToBuild = {}
 
+    # For R4 Create a copy of the graph before any changes
+    simGraphCopy = simGraph.copy()
+
     # We need to run the next logic for as many roads as we build
     i = 0
     while i < k:
@@ -214,7 +219,63 @@ def main():
 
     # Once we come out of this loop, then we have calculated all the roads to build and we can display them
 
-    print("Recommended new roads to build:")
+    print("Recommended new roads to build in R3:")
+    for (start, end), benefit in roadsToBuild.items():
+        print(f"Road from {start} to {end}: Benefit = {benefit}")
+
+
+    roadsToBuild.clear()
+
+    # We need to also clear and reset the cached paths
+    cachedPaths = cache_shortest_paths(simGraphCopy)
+
+    # New f value
+    newF = 0.8
+
+    # We need to run the next logic for as many roads as we build
+    i = 0
+    while i < k:
+        # Get the starting and finishing node of each path and calculate its benefit
+        for (start, end), path in cachedPaths.items():
+            if simGraphCopy.has_edge(start, end):
+                continue  # Dont consider roads that exist
+            benefitsMatrix[(start, end)] = calculate_benefit(start, end, simGraphCopy, cachedPaths, newF)
+
+        # Find the edge with the highest benefit
+        max_benefit_edge = max(benefitsMatrix, key=benefitsMatrix.get)
+        max_benefit = benefitsMatrix[max_benefit_edge]
+
+        # Add this edge to roadsToBuild if not already present and it has a positive benefit
+        if max_benefit_edge not in roadsToBuild and max_benefit > 0:
+            # Retrieve the shortest path for the max benefit edge from cachedPaths
+            shortest_path = cachedPaths[max_benefit_edge]
+
+            # Calculate the total length of this path
+            path_length = sum(
+                simGraphCopy[shortest_path[i]][shortest_path[i + 1]]['length'] for i in range(len(shortest_path) - 1))
+
+            # Multiply the path length by f to get the new length
+            new_length = path_length * newF
+
+            # Add the edge to simGraph with the calculated length
+            simGraphCopy.add_edge(max_benefit_edge[0], max_benefit_edge[1], length=new_length, traffic_volume=0)
+
+            roadsToBuild[max_benefit_edge] = max_benefit
+
+            # Recompute the shortest paths because the graph has changed
+            cachedPaths = cache_shortest_paths(simGraphCopy)
+
+            # Clear the benefits matrix because we added a new edge
+            benefitsMatrix.clear()
+
+            i += 1  # Increment only if a road was added
+        else:
+            # If the highest benefit road is already in roadsToBuild or its benefit is not positive, break to avoid infinite loop
+            break
+
+    # Once we come out of this loop, then we have calculated all the roads to build and we can display them
+
+    print("Recommended new roads to build in R4:")
     for (start, end), benefit in roadsToBuild.items():
         print(f"Road from {start} to {end}: Benefit = {benefit}")
 

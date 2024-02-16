@@ -24,6 +24,7 @@ def prepare_graph(N, p_initial, L):
 
     # Connect nodes based on the initial p value and increment p if not fully connected
     while not nx.is_connected(simGraph):
+        simGraph.clear_edges()
         for u in range(N):
             for v in range(u + 1, N):
                 if random.random() < p and not simGraph.has_edge(u, v):

@@ -1,11 +1,11 @@
-# R1: Code from pseudo, Project 1 group 3
+# R5: Code from R3 adapted to R5, Project 1 group 3
 
 import networkx as nx
 import random
 
 # Below values are for this pseudo code to code example. Also has default values
 N = 60  # Number of nodes to create
-p = 0.05  # Higher probability to ensure connectivity in a smaller graph
+p = 0.1  # Higher probability to ensure connectivity in a smaller graph, doubled connectivity
 L = (5, 25)  # Range of possible road lengths
 T = 100  # Number of trips to simulate
 k = 3  # Number of roads to build
@@ -30,6 +30,7 @@ def prepare_graph(N, p_initial, L):
                 if random.random() < p and not simGraph.has_edge(u, v):
                     simGraph.add_edge(u, v, length=random.randint(*L), traffic_volume=0)
         p += 0.01  # Increment p as defined by project
+
 
     # Return the generated graph
     return simGraph
@@ -92,7 +93,8 @@ def calculate_benefit(X, Y, G, shortestPaths, f):
     # Distance is the shortest path * shrinkage factor
     d_XY = spd_XY * f
 
-    # The trips is calculated by adding them both way together
+    # Directly calculate nt as the sum of trips (traffic_volume) between X and Y and Y to X
+    # This calculation is from the pseudo: (nt(X, Y) + nt(Y, X))
     nt_XY = 0
     if (X, Y) in shortestPaths:
         nt_XY += sum(G[path_XY[i]][path_XY[i + 1]]['traffic_volume'] for i in range(len(path_XY) - 1))
